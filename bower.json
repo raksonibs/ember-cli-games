@@ -1,5 +1,5 @@
 {
-  "name": "ember-cli-game-logic",
+  "name": "ember-cli-games",
   "dependencies": {
     "ember": "~2.5.0",
     "ember-cli-shims": "0.1.1",

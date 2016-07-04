@@ -2,5 +2,5 @@
 'use strict';
 
 module.exports = {
-  name: 'ember-cli-game-logic'
+  name: 'ember-cli-games'
 };

@@ -1,0 +1,81 @@
+<h1> Game Dynamics for {{gameTypeName}} with slug {{gameTypeSlug}}</h1>
+{{#each gameProcessor.gameTypes as |gameType|}}
+<p>{{gameType.name}}</p>
+{{/each}}
+
+<div id='game-container'>
+
+</div>
+
+<div class="game-ctns" id="rps">
+  <h1>Rock Paper Scissors</h1>
+  <div class="turn" id="turn">Current Turn: </div>
+  <div class="result" id="result">Result so far: Determining</div>
+  <br />
+  <br />
+  <button class="rps">rock</button>
+  <button class="rps">paper</button>
+  <button class="rps">scissors</button>
+</div>
+
+<div class="game-ctns" id="ttt">
+  <h1>Tic Tac Toe</h1>
+  <div class="turn" id="turn">Current Turn: </div>
+  <div class="result" id="result">Result so far: Determining</div>
+  <br />
+  <br />
+  <div class='ttt-ctn'>
+    <div class="row">
+      <div data-row="1" data-col="1" class="ttt square"></div>
+      <div data-row="1" data-col="2" class="ttt square"></div>
+      <div data-row="1" data-col="3" class="ttt square"></div>
+    </div>
+    <div class="row">
+      <div data-row="2" data-col="1" class="ttt square"></div>
+      <div data-row="2" data-col="2" class="ttt square"></div>
+      <div data-row="2" data-col="3" class="ttt square"></div>
+    </div>
+    <div class="row">
+      <div data-row="3" data-col="1" class="ttt square"></div>
+      <div data-row="3" data-col="2" class="ttt square"></div>
+      <div data-row="3" data-col="3" class="ttt square"></div>
+    </div>
+  </div>
+</div>
+
+<div class="game-ctns" id="stixx">
+  <h1>Stixx</h1>
+  <div class="turn" id="turn">Current Turn: </div>
+  <div class="result" id="result">Result so far: Determining</div>
+  <br />
+  <br />
+  <div class="stick-ctn">
+    <div class="row">
+      <div data-row="1" data-col="1" class="stixx stick"></div>
+    </div>
+    <div class="row">
+      <div data-row="2" data-col="1" class="stixx stick"></div>
+      <div data-row="2" data-col="2" class="stixx stick"></div>
+    </div>
+    <div class="row">
+      <div data-row="3" data-col="1" class="stixx stick"></div>
+      <div data-row="3" data-col="2" class="stixx stick"></div>
+      <div data-row="3" data-col="3" class="stixx stick"></div>
+    </div>
+    <div class="row">
+      <div data-row="4" data-col="1" class="stixx stick"></div>
+      <div data-row="4" data-col="2" class="stixx stick"></div>
+      <div data-row="4" data-col="3" class="stixx stick"></div>
+      <div data-row="4" data-col="4" class="stixx stick"></div>
+    </div>
+    <div class="row">
+      <div data-row="5" data-col="1" class="stixx stick"></div>
+      <div data-row="5" data-col="2" class="stixx stick"></div>
+      <div data-row="5" data-col="3" class="stixx stick"></div>
+      <div data-row="5" data-col="4" class="stixx stick"></div>
+      <div data-row="5" data-col="5" class="stixx stick"></div>
+    </div>
+  </div>
+
+</div>
+

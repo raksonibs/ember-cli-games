@@ -1,8 +1,3 @@
-<h1> Game Dynamics for {{gameTypeName}} with slug {{gameTypeSlug}}</h1>
-{{#each gameProcessor.gameTypes as |gameType|}}
-<p>{{gameType.name}}</p>
-{{/each}}
-
 <div id='game-container'>
 
 </div>
@@ -13,9 +8,12 @@
   <div class="result" id="result">Result so far: Determining</div>
   <br />
   <br />
-  <button class="rps">rock</button>
-  <button class="rps">paper</button>
-  <button class="rps">scissors</button>
+  {{!-- {{action "clickInside" "scissors"}} --}}
+  {{#if (eqNum currentTurn authManager.currentUser.id) }}
+    <button class="rps">rock</button>
+    <button class="rps">paper</button>
+    <button class="rps">scissors</button>
+  {{/if}}
 </div>
 
 <div class="game-ctns" id="ttt">

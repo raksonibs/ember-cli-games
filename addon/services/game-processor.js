@@ -3,8 +3,13 @@ var thisState;
 
 export default Ember.Service.extend({
   socketIOService: Ember.inject.service('socket-io'),
+  authManager: Ember.inject.service('session'),
+  users: [],
+
   store: Ember.inject.service(),
   match: null,
+  moves: null,
+  mover: null,
   gameTypes: [
     {
       name: 'Rock Paper Scissors',
@@ -22,6 +27,19 @@ export default Ember.Service.extend({
 
   setMatch(match) {
     this.set('match', match.toJSON());
+  },
+
+  setMover(mover) {
+    this.set('mover', mover);
+    // this.set('moves', mover.get('moves'));
+  },
+
+  setMoves(moves) {
+    console.log(moves);
+  },
+
+  setUsers(users) {
+    this.set('users', users);
   },
 
   init() {
@@ -78,11 +96,24 @@ export default Ember.Service.extend({
 
   recordMove(choice) {
     console.log('recording move ' + choice);
+    // because this doesn't persist right now, on record move, need to populate the uses' moves in the matches mover
     if (thisState.get('game').currentGameType === "rps") {          
       thisState.get('game')[thisState.get('game').currentGameType].moves[thisState.get('game').currentTurn.toString()] = choice;
     } else {
       thisState.get('game')[thisState.get('game').currentGameType].moves[thisState.get('game').currentTurn.toString()].push(choice);
     }
+
+    const socket = thisState.get('socketIOService').socketFor('http://localhost:3001/');
+    var text = "Sending match choice to client by this user " + thisState.get('authManager.currentUser.id') + " with match unique id " + thisState.get('match.uniqueId') + "with choice: " + choice;
+    socket.send('We have a winner at: ' + text);
+    // is this the true userid?
+    socket.emit('recordMove', {
+                                data: {
+                                  match: thisState.get('match'), 
+                                  user_id: thisState.get('authManager.currentUser.id'),
+                                  choice: choice
+                                }
+                              });    
   },
 
   newUser(user) {
@@ -90,7 +121,10 @@ export default Ember.Service.extend({
     return user !== thisState.get('game').currentTurn;
   },
 
-  determineRPS(moveOne, moveTwo) {
+  determineRPS(moveOneChoices, moveTwoChoices) {
+    var moveOne = moveOneChoices.choices[0];
+    var moveTwo = moveTwoChoices.choices[0];
+
     if (moveOne === "rock" && moveTwo === "paper") {
       thisState.get('updateResultHeader')("2");
     } else if (moveOne === "paper" && moveTwo === "rock") {
@@ -106,6 +140,23 @@ export default Ember.Service.extend({
     } else {
       thisState.get('updateResultHeader')("draw");
     }
+
+    if (moveTwoChoices.choices.length >= 1 && moveOneChoices.choices.length >= 1) {
+      thisState.get('resetChoices')();
+    }
+  },
+
+  resetChoices() {
+    console.log("RESETING CHOICES");
+    const socket = thisState.get('socketIOService').socketFor('http://localhost:3001/');
+    socket.send('Reseting Choices for mover id: ' + thisState.get('mover.id'));
+    // is this the true userid?
+    socket.emit('resetMover', { 
+                                data: {
+                                    mover: thisState.get('mover'),
+                                    mover_id: thisState.get('mover.id')
+                                      }
+                                    });
   },
 
   resetStix() {
@@ -164,7 +215,7 @@ export default Ember.Service.extend({
                         ];
 
     var moves =  [...thisState.get('game')[thisState.get('game').currentGameType].moves[thisState.get('game').currentTurn.toString()]];
-    // debugger
+   
     var threeTruths = [];
     var readableMoves = moves.map((item) => [parseInt(item.row), parseInt(item.col)]);
 
@@ -192,18 +243,28 @@ export default Ember.Service.extend({
 
   determineWinner() {
     console.log('detererming winner');
-    var moveOne = thisState.get('game')[thisState.get('game').currentGameType].moves["1"];
-    var moveTwo = thisState.get('game')[thisState.get('game').currentGameType].moves["2"];
+    // var moves = thisState.get('mover.moves').toArray();
+    var moveOne;
+    var moveTwo;
+
+    thisState.get('store').query('move', { mover_id: thisState.get('mover.id') }).then(function(moves) {      
+      var moveArray = moves.toArray();
+      if (moveArray.length >= 2) {
+        moveOne = moveArray[0].toJSON();
+        moveTwo = moveArray[1].toJSON();     
+        
+        if (thisState.get('game').currentGameType === "rps") {
+          thisState.get('determineRPS')(moveOne, moveTwo);
+          thisState.get('resetGame')();
+        } else if (thisState.get('game').currentGameType === "ttt") {
+          thisState.get('determineTTT')(moveOne, moveTwo);
+        } else {
+          thisState.get('determineSTIX');
+          thisState.get('resetGame')();
+        }
+      }
+    });
     
-    if (thisState.get('game').currentGameType === "rps") {
-      thisState.get('determineRPS')(moveOne, moveTwo);
-      thisState.get('resetGame')();
-    } else if (thisState.get('game').currentGameType === "ttt") {
-      thisState.get('determineTTT')(moveOne, moveTwo);
-    } else {
-      thisState.get('determineSTIX');
-      thisState.get('resetGame')();
-    }
   },
 
   updateResultHeader(userNum) {
@@ -243,19 +304,28 @@ export default Ember.Service.extend({
     thisState.get('game')["rps"].moves = { 1: '', 2: '' };
     thisState.get('game')["ttt"].moves = {1: [], 2: []};
     thisState.get('game')["stixx"].moves = {1: [], 2: []};
-    thisState.get('updateTurnHeader')("1");
+    thisState.get('updateTurnHeader')(false, "1");
   },
 
-  updateTurnHeader(turn) {
+  updateTurnHeader(socket_container, turn) {
     console.log('updating turn header with ' + turn);
     var nodes = document.querySelectorAll('.turn');
+
     for (var i =0; i < nodes.length; i++) {
-      nodes[i].textContent = "Current User Turn is: " + thisState.get('game').currentTurn;
+      nodes[i].textContent = "Current User Turn is: " + (turn || thisState.get('game').currentTurn);
+    }
+
+    if (socket_container === true) {
+      console.log("SOCKET CALL IN UPDATE TURN HEADER");
+      const socket = thisState.get('socketIOService').socketFor('http://localhost:3001/');
+        // this.get('registerOption')(option, this.get('match'));
+        // we will get the socket to make the call
+      socket.emit('turnChange', {data: {user: thisState.get('authManager.currentUser.id'), match_id: thisState.get('match.uniqueId'), match: thisState.get('match')}});
     }
   },
 
   updateTurn() {
-    console.log('updating turn ');
+    console.log('updating turn OVER HERE');
     var newCurrentTurn = thisState.get('game').users.find(thisState.get('newUser'));
     thisState.get('game').currentTurn = newCurrentTurn;
   },
@@ -327,7 +397,7 @@ export default Ember.Service.extend({
     console.log(this.textContent);
     thisState.get('recordMove')(this.textContent);
     thisState.get('updateTurn')();
-    thisState.get('updateTurnHeader')();
+    thisState.get('updateTurnHeader')(true);
     thisState.get('game').currentMoveCount += 1;
     if (thisState.get('game').currentMoveCount === thisState.get('game').numMaxMoves) {          
       thisState.get('determineWinner')();
